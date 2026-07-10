@@ -1,6 +1,5 @@
 // mobile/src/navigation/AppNavigator.js
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import OnboardingScreen from '../screens/OnboardingScreen';
@@ -10,6 +9,7 @@ import ReadinessScoreScreen from '../screens/ReadinessScoreScreen';
 import DoubtWallScreen from '../screens/DoubtWallScreen';
 import PauseResumeScreen from '../screens/PauseResumeScreen';
 import OutcomeDashboardScreen from '../screens/OutcomeDashboardScreen';
+import JobBoardScreen from '../screens/JobBoardScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -57,6 +57,11 @@ const AppNavigator = () => {
         name="OutcomeDashboard"
         component={OutcomeDashboardScreen}
         options={{ title: 'Outcome Dashboard' }}
+      />
+      <Stack.Screen
+        name="JobBoard"
+        component={JobBoardScreen}
+        options={{ title: 'Job Board' }}
       />
     </Stack.Navigator>
   );

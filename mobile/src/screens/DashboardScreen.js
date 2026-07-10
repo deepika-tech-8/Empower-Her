@@ -36,33 +36,55 @@ const DashboardScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.primaryLight }]}
-            onPress={() => navigation.navigate('Lesson', { topic: 'vlookup' })}
-          >
-            <Text style={styles.actionEmoji}>📖</Text>
-            <Text style={styles.actionLabel}>Snack Lesson</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.secondaryLight }]}
-            onPress={() => navigation.navigate('DoubtWall')}
-          >
-            <Text style={styles.actionEmoji}>💬</Text>
-            <Text style={styles.actionLabel}>Doubt Wall</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.successLight }]}
-            onPress={() => navigation.navigate('ReadinessScore')}
-          >
-            <Text style={styles.actionEmoji}>🎯</Text>
-            <Text style={styles.actionLabel}>My Score</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
+<View style={styles.quickActions}>
+  <Text style={styles.sectionTitle}>Quick Actions</Text>
+  <View style={styles.actionRow}>
+    <TouchableOpacity
+      style={[styles.actionButton, { backgroundColor: colors.primaryLight }]}
+      onPress={() => navigation.navigate('Lesson', { topic: 'vlookup' })}
+    >
+      <Text style={styles.actionEmoji}>📖</Text>
+      <Text style={styles.actionLabel}>Snack Lesson</Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={[styles.actionButton, { backgroundColor: colors.secondaryLight }]}
+      onPress={() => navigation.navigate('DoubtWall')}
+    >
+      <Text style={styles.actionEmoji}>💬</Text>
+      <Text style={styles.actionLabel}>Doubt Wall</Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={[styles.actionButton, { backgroundColor: colors.successLight }]}
+      onPress={() => navigation.navigate('ReadinessScore')}
+    >
+      <Text style={styles.actionEmoji}>🎯</Text>
+      <Text style={styles.actionLabel}>My Score</Text>
+    </TouchableOpacity>
+  </View>
+  <View style={styles.actionRow}>
+    <TouchableOpacity
+      style={[styles.actionButton, { backgroundColor: colors.primaryLight }]}
+      onPress={() => navigation.navigate('JobBoard')}  // <-- ADD THIS
+    >
+      <Text style={styles.actionEmoji}>💼</Text>
+      <Text style={styles.actionLabel}>Job Board</Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={[styles.actionButton, { backgroundColor: colors.secondaryLight }]}
+      onPress={() => navigation.navigate('OutcomeDashboard')}
+    >
+      <Text style={styles.actionEmoji}>📊</Text>
+      <Text style={styles.actionLabel}>Outcome</Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={[styles.actionButton, { backgroundColor: colors.warningLight }]}
+      onPress={() => navigation.navigate('PauseResume')}
+    >
+      <Text style={styles.actionEmoji}>⏸️</Text>
+      <Text style={styles.actionLabel}>Pause</Text>
+    </TouchableOpacity>
+  </View>
+</View>
       {/* Next Steps */}
       <View style={styles.nextSteps}>
         <Text style={styles.sectionTitle}>🔍 What to Fix Next</Text>

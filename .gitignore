@@ -10,3 +10,24 @@ npm-debug.*
 *.mobileprovision
 *.orig.*
 web-build/
+
+# Environment variables
+.env
+.env.local
+
+# Build output
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log

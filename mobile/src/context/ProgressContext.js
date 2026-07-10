@@ -1,4 +1,3 @@
-// mobile/src/context/ProgressContext.js
 import React, { createContext, useState, useContext } from 'react';
 import { mockProgress } from '../utils/mockData';
 
@@ -33,4 +32,5 @@ export const ProgressProvider = ({ children }) => {
 
 export const useProgress = () => useContext(ProgressContext);
 
-export default ProgressContext; // <-- ADD THIS
+// ✅ ADD THIS DEFAULT EXPORT
+export default ProgressContext;

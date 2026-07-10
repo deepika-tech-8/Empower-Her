@@ -1,61 +1,29 @@
-// mobile/src/services/lessonService.js
-import { AI_API_URL, API_KEY } from '@env';
-import mockData from '../utils/mockData';
+import { db } from './firebase';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { mockDataLessons } from '../utils/mockData';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const lessonService = {
-  // Generate a micro-lesson using AI
-  generateLesson: async (topic, level = 'beginner') => {
-    try {
-      const response = await fetch(`${AI_API_URL}/generate-lesson`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`,
-        },
-        body: JSON.stringify({
-          topic: topic,
-          level: level,
-          format: 'micro_lesson', // 3-7 min
-        }),
-      });
-      
-      if (!response.ok) throw new Error('AI generation failed');
-      
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('AI lesson generation failed:', error);
-      // Fallback to seed content
-      return getSeedLesson(topic);
+  async fetchLesson(lessonId, isOffline = false) {
+    if (isOffline) {
+      // Fetch from local cache or fall back to mock seed data
+      const cached = await AsyncStorage.getItem(`cached_lesson_${lessonId}`);
+      if (cached) return JSON.parse(cached);
+      return mockDataLessons[lessonId] || mockDataLessons['excel_vlookup'];
     }
-  },
 
-  // Fallback: Seed content for cold-start
-  getSeedLesson: async (topic) => {
-    // In production, fetch from Firebase
-    const seedLessons = mockData.seedLessons;
-    return seedLessons[topic] || seedLessons.default;
-  },
-
-  // Break a topic into snack-sized chunks
-  breakIntoSnacks: async (topic) => {
     try {
-      const response = await fetch(`${AI_API_URL}/break-into-snacks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`,
-        },
-        body: JSON.stringify({
-          topic: topic,
-          maxDuration: 7, // minutes per snack
-        }),
-      });
-      
-      return await response.json();
+      const lessonRef = doc(db, "lessons", lessonId);
+      const lessonSnap = await getDoc(lessonRef);
+      if (lessonSnap.exists()) {
+        const data = lessonSnap.data();
+        await AsyncStorage.setItem(`cached_lesson_${lessonId}`, JSON.stringify(data));
+        return data;
+      }
+      return mockDataLessons[lessonId] || mockDataLessons['excel_vlookup'];
     } catch (error) {
-      console.error('Snack breakdown failed:', error);
-      return mockData.defaultSnackBreakdown;
+      console.warn("Firestore error, falling back to safe mock payload", error);
+      return mockDataLessons[lessonId] || mockDataLessons['excel_vlookup'];
     }
-  },
+  }
 };

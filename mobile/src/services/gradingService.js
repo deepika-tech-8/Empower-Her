@@ -1,78 +1,34 @@
-// mobile/src/services/gradingService.js
-// AI Grading Service - COMPLETE FIX
+import { mockDataLessons } from '../utils/mockData';
 
 export const gradingService = {
-  // Grade a practice task
-  gradeTask: async (task, userAnswer) => {
+  async gradeTask(lessonId, userAnswer) {
     try {
-      // Get keywords from task
-      const keywords = task?.keywords || [];
+      // Point directly to Backend API Functions (emulated fallback here for local offline consistency)
+      const response = await fetch('https://us-central1-elevateher-learn.cloudfunctions.net/api/grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lessonId, userAnswer })
+      });
+
+      if (!response.ok) throw new Error("API call returned failure status");
+      return await response.json();
+    } catch (error) {
+      console.warn("AI grading API offline, routing to local string-matching heuristics", error);
       
-      // If no keywords, return default grade
-      if (keywords.length === 0) {
+      const cleanAnswer = userAnswer.trim().replace(/\s+/g, '').toLowerCase();
+      if (lessonId === 'excel_vlookup' && cleanAnswer === '3') {
         return {
-          score: 7,
-          feedback: "Good effort! Keep practicing. 💪",
-          missing: [],
+          passed: true,
+          score: '10/10',
+          response: 'Excellent! You successfully extracted matching items from column index 3. Your core layout comprehension is very strong.'
         };
       }
-
-      // Check which keywords are found in user's answer
-      const found = keywords.filter(kw => 
-        userAnswer.toLowerCase().includes(kw.toLowerCase())
-      );
-      
-      // Calculate score (0-10)
-      const score = Math.min(10, Math.round((found.length / keywords.length) * 10) + 2);
-      
-      // Generate feedback - FIXED STRINGS
-      let feedback = "";
-      if (score >= 8) {
-        feedback = "Excellent work! You really understand this. 🌟";
-      } else if (score >= 6) {
-        feedback = "Good work! You understood the key concepts. 💪";
-      } else if (score >= 4) {
-        feedback = "Good start! Try using the specific functions mentioned in the lesson.";
-      } else {
-        feedback = "Keep practicing! Review the lesson and try again. You've got this! 💪";
-      }
-      
-      // Generate missing items
-      const missing = score < 7 
-        ? keywords.filter(kw => !found.includes(kw)).map(k => `Try using "${k}"`)
-        : [];
       
       return {
-        score: score,
-        feedback: feedback,
-        missing: missing,
-      };
-    } catch (error) {
-      console.error('Grading failed:', error);
-      return {
-        score: 5,
-        feedback: "Keep practicing! You'll get better. 💪",
-        missing: ["Try reviewing the lesson again"],
+        passed: false,
+        score: '5/10',
+        response: 'Encouraging Try! Take another look at the target column positioning. Think about how many index columns you offset from Column A.'
       };
     }
-  },
-
-  // Flag a score for human review
-  flagScore: async (lessonId, userId, reason) => {
-    try {
-      console.log('Score flagged:', { lessonId, userId, reason });
-      return { 
-        success: true, 
-        message: 'Score flagged for review' 
-      };
-    } catch (error) {
-      console.error('Flagging failed:', error);
-      return { 
-        success: false, 
-        error: error.message 
-      };
-    }
-  },
+  }
 };
-
-export default gradingService;

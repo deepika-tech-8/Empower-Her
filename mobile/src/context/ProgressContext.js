@@ -1,29 +1,66 @@
-import React, { createContext, useState, useContext } from 'react';
-import { mockProgress } from '../utils/mockData';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const ProgressContext = createContext();
 
 export const ProgressProvider = ({ children }) => {
-  const [progress, setProgress] = useState(mockProgress);
-  const [schedule, setSchedule] = useState(null);
+  const [momentumScore, setMomentumScore] = useState(100); // 0 to 100
+  const [completedLessons, setCompletedLessons] = useState([]);
   const [isPaused, setIsPaused] = useState(false);
+  const [pauseDate, setPauseDate] = useState(null);
+  const [resumeTriggered, setResumeTriggered] = useState(false);
+  const [helperPoints, setHelperPoints] = useState(25); // Peer points tracker
+  const [readinessScores, setReadinessScores] = useState({
+    formulas: 0.65,
+    pivotTables: 0.40,
+    dataCleaning: 0.35,
+  });
 
-  const updateProgress = (newData) => {
-    setProgress(prev => ({ ...prev, ...newData }));
+  // Simple heuristic decay to avoid streak-shaming (called daily or on-app-open)
+  const applyMomentumDecay = (daysMissed) => {
+    if (isPaused || daysMissed <= 1) return;
+    setMomentumScore((prev) => {
+      const penalty = daysMissed * 2.5; // -2.5% per day
+      const nextScore = prev - penalty;
+      return Math.max(nextScore, 20); // capped decay at 20%
+    });
   };
 
-  const pauseLearning = () => setIsPaused(true);
-  const resumeLearning = () => setIsPaused(false);
+  const togglePauseMode = () => {
+    if (isPaused) {
+      setIsPaused(false);
+      setPauseDate(null);
+      setResumeTriggered(true); // Triggers Welcome Back recap screen
+    } else {
+      setIsPaused(true);
+      setPauseDate(new Date().toISOString());
+    }
+  };
+
+  const completeLesson = (lessonId) => {
+    if (!completedLessons.includes(lessonId)) {
+      setCompletedLessons((prev) => [...prev, lessonId]);
+      setMomentumScore((prev) => Math.min(prev + 5, 100)); // Boost momentum softly
+    }
+  };
+
+  const awardHelperPoints = (points) => {
+    setHelperPoints((prev) => prev + points);
+  };
 
   return (
     <ProgressContext.Provider value={{
-      progress,
-      schedule,
-      setSchedule,
-      updateProgress,
+      momentumScore,
+      completedLessons,
       isPaused,
-      pauseLearning,
-      resumeLearning,
+      pauseDate,
+      resumeTriggered,
+      setResumeTriggered,
+      helperPoints,
+      readinessScores,
+      setReadinessScores,
+      togglePauseMode,
+      completeLesson,
+      awardHelperPoints,
     }}>
       {children}
     </ProgressContext.Provider>
@@ -31,6 +68,3 @@ export const ProgressProvider = ({ children }) => {
 };
 
 export const useProgress = () => useContext(ProgressContext);
-
-// ✅ ADD THIS DEFAULT EXPORT
-export default ProgressContext;

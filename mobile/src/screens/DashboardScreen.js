@@ -1,377 +1,190 @@
-// mobile/src/screens/DashboardScreen.js - UNIQUE DESIGN
-import React from 'react';
-import { 
-  View, Text, TouchableOpacity, ScrollView, 
-  StyleSheet, Dimensions, Image 
-} from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, ScrollView, Animated } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 import { useProgress } from '../context/ProgressContext';
-import { colors, typography, spacing, borderRadius, shadows, gradients } from '../styles/theme';
+import { spacing, typography, glassmorphism } from '../styles/theme';
+import { Button } from '../components/common/Button';
 
-const { width } = Dimensions.get('window');
+export default function DashboardScreen({ navigation }) {
+  const { colors, isDarkMode } = useTheme();
+  const { momentumScore, isPaused, togglePauseMode, helperPoints } = useProgress();
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
-const DashboardScreen = ({ navigation }) => {
-  const { progress } = useProgress();
-
-  const quickActions = [
-    { 
-      id: 'lesson', 
-      title: 'Snack Lesson', 
-      emoji: '📖', 
-      color: colors.primaryLight,
-      iconColor: colors.primary,
-      action: () => navigation.navigate('Lesson', { topic: 'vlookup' }),
-    },
-    { 
-      id: 'doubt', 
-      title: 'Doubt Wall', 
-      emoji: '💬', 
-      color: colors.secondaryLight,
-      iconColor: colors.secondary,
-      action: () => navigation.navigate('DoubtWall'),
-    },
-    { 
-      id: 'score', 
-      title: 'My Score', 
-      emoji: '🎯', 
-      color: colors.accentLight,
-      iconColor: colors.accent,
-      action: () => navigation.navigate('ReadinessScore'),
-    },
-    { 
-      id: 'jobs', 
-      title: 'Job Board', 
-      emoji: '💼', 
-      color: colors.successLight,
-      iconColor: colors.success,
-      action: () => navigation.navigate('JobBoard'),
-    },
-    { 
-      id: 'outcome', 
-      title: 'Outcome', 
-      emoji: '📊', 
-      color: '#EDE7F6',
-      iconColor: colors.primaryDark,
-      action: () => navigation.navigate('OutcomeDashboard'),
-    },
-    { 
-      id: 'pause', 
-      title: 'Pause', 
-      emoji: '⏸️', 
-      color: colors.warningLight,
-      iconColor: colors.warning,
-      action: () => navigation.navigate('PauseResume'),
-    },
-  ];
+  useEffect(() => {
+    // Elegant warm pulse animation representing steady learning flow
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.03,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Background Decor */}
-      <View style={styles.bgDecor1} />
-      <View style={styles.bgDecor2} />
-
-      {/* Header */}
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hello, Priya! 👋</Text>
-          <Text style={styles.subtitle}>Ready to learn today?</Text>
+        <Text style={[styles.greeting, { color: colors.textPrimary }]}>Welcome back, Learner ☕</Text>
+        <Text style={[styles.motto, { color: colors.textSecondary }]}>You are exactly where you need to be.</Text>
+      </View>
+
+      {/* Glassmorphic Momentum Panel */}
+      <Animated.View style={[
+        styles.momentumCard, 
+        glassmorphism(isDarkMode), 
+        { transform: [{ scale: pulseAnim }] }
+      ]}>
+        <View style={styles.momentumHeader}>
+          <Text style={[styles.momentumTitle, { color: colors.textPrimary }]}>Momentum Rating</Text>
+          <Text style={[styles.momentumValue, { color: colors.primary }]}>{momentumScore}%</Text>
         </View>
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatar}>👩</Text>
-          <View style={styles.onlineDot} />
+        <Text style={[styles.momentumDesc, { color: colors.textSecondary }]}>
+          This is a progress rating that decreases slowly during pauses, avoiding strict day streaks so you feel zero guilt if you need to step away.
+        </Text>
+        <View style={styles.progressBarBg}>
+          <View style={[styles.progressBarFill, { width: `${momentumScore}%`, backgroundColor: colors.primary }]} />
+        </View>
+      </Animated.View>
+
+      {/* Core Actions / Grid */}
+      <View style={styles.quickActions}>
+        <View style={[styles.miniCard, glassmorphism(isDarkMode)]}>
+          <Text style={styles.emoji}>💻</Text>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Next Snack Lesson</Text>
+          <Text style={[styles.cardSub, { color: colors.textSecondary }]}>Excel: Clean with VLOOKUP (5 min)</Text>
+          <Button 
+            title="Start" 
+            onPress={() => navigation.navigate('Lesson')} 
+            style={styles.actionBtn}
+          />
+        </View>
+
+        <View style={[styles.miniCard, glassmorphism(isDarkMode)]}>
+          <Text style={styles.emoji}>🏆</Text>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Job-Readiness</Text>
+          <Text style={[styles.cardSub, { color: colors.textSecondary }]}>Your skills mapped against job markets.</Text>
+          <Button 
+            title="Check Score" 
+            onPress={() => navigation.navigate('ReadinessScore')} 
+            variant="secondary"
+            style={styles.actionBtn}
+          />
         </View>
       </View>
 
-      {/* Progress Cards */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardsScroll}>
-        {/* Momentum Score */}
-        <View style={[styles.card, styles.momentumCard]}>
-          <Text style={styles.cardLabel}>🔥 Momentum</Text>
-          <Text style={styles.cardValue}>{progress.momentumScore}%</Text>
-          <View style={styles.cardBar}>
-            <View style={[styles.cardBarFill, { width: `${progress.momentumScore}%` }]} />
-          </View>
-          <Text style={styles.cardSubtext}>Keep going! 🚀</Text>
-        </View>
-
-        {/* Readiness Score */}
-        <TouchableOpacity 
-          style={[styles.card, styles.readinessCard]}
-          onPress={() => navigation.navigate('ReadinessScore')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.cardLabel}>📊 Readiness</Text>
-          <Text style={[styles.cardValue, { color: colors.secondary }]}>
-            {progress.overallScore}%
-          </Text>
-          <View style={styles.cardBar}>
-            <View style={[styles.cardBarFill, { 
-              width: `${progress.overallScore}%`,
-              backgroundColor: colors.secondary,
-            }]} />
-          </View>
-          <Text style={styles.cardSubtext}>Tap to view breakdown →</Text>
-        </TouchableOpacity>
-
-        {/* Lessons Card */}
-        <View style={[styles.card, styles.lessonsCard]}>
-          <Text style={styles.cardLabel}>📚 Lessons</Text>
-          <Text style={[styles.cardValue, { color: colors.accent }]}>
-            {progress.lessonsCompleted || 4}
-          </Text>
-          <Text style={styles.cardSubtext}>Completed so far 🎉</Text>
-        </View>
-      </ScrollView>
-
-      {/* Quick Actions Grid */}
-      <View style={styles.actionsSection}>
-        <Text style={styles.sectionTitle}>⚡ Quick Actions</Text>
-        <View style={styles.actionsGrid}>
-          {quickActions.map((action) => (
-            <TouchableOpacity
-              key={action.id}
-              style={[styles.actionCard, { backgroundColor: action.color }]}
-              onPress={action.action}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.actionEmoji}>{action.emoji}</Text>
-              <Text style={[styles.actionTitle, { color: action.iconColor }]}>
-                {action.title}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      {/* Guilt-Free Rest Panel */}
+      <View style={[styles.pauseCard, glassmorphism(isDarkMode)]}>
+        <Text style={[styles.pauseTitle, { color: colors.textPrimary }]}>
+          {isPaused ? 'Learning is Paused 🌸' : 'Life getting busy? ☕'}
+        </Text>
+        <Text style={[styles.pauseDesc, { color: colors.textSecondary }]}>
+          {isPaused 
+            ? 'Take your time. We have locked your momentum rating. Ready to return?' 
+            : 'Freeze your progression score at zero penalty. Resume anytime without losing pace.'}
+        </Text>
+        <Button 
+          title={isPaused ? 'Resume Learning' : 'Pause for Life'} 
+          onPress={togglePauseMode}
+          variant={isPaused ? 'primary' : 'secondary'}
+        />
       </View>
-
-      {/* Next Steps */}
-      <View style={styles.nextStepsSection}>
-        <Text style={styles.sectionTitle}>🔍 What to Fix Next</Text>
-        {progress.nextSteps?.map((step, index) => (
-          <View key={index} style={styles.stepCard}>
-            <View style={styles.stepBullet} />
-            <Text style={styles.stepText}>{step}</Text>
-            <Text style={styles.stepArrow}>→</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Pause Button */}
-      <TouchableOpacity 
-        style={styles.pauseButton}
-        onPress={() => navigation.navigate('PauseResume')}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.pauseIcon}>⏸️</Text>
-        <Text style={styles.pauseText}>Life Happens? Pause Learning</Text>
-        <Text style={styles.pauseArrow}>→</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  bgDecor1: {
-    position: 'absolute',
-    top: -150,
-    right: -100,
-    width: 350,
-    height: 350,
-    borderRadius: 175,
-    backgroundColor: colors.primaryLight,
-    opacity: 0.2,
-  },
-  bgDecor2: {
-    position: 'absolute',
-    bottom: -100,
-    left: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: colors.secondaryLight,
-    opacity: 0.15,
+    padding: spacing.md,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
+    marginTop: 50,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.sm,
   },
   greeting: {
     ...typography.h1,
-    fontWeight: '800',
-    color: colors.textPrimary,
   },
-  subtitle: {
+  motto: {
     ...typography.body,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  avatarContainer: {
-    position: 'relative',
-  },
-  avatar: {
-    fontSize: 40,
-  },
-  onlineDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.online,
-    borderWidth: 2,
-    borderColor: colors.textWhite,
-  },
-  cardsScroll: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  card: {
-    width: width * 0.4,
-    padding: spacing.md,
-    borderRadius: borderRadius.large,
-    marginRight: spacing.md,
-    ...shadows.medium,
+    marginTop: 4,
   },
   momentumCard: {
-    backgroundColor: colors.primaryLight,
-    borderWidth: 1,
-    borderColor: colors.primary,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
-  readinessCard: {
-    backgroundColor: colors.secondaryLight,
-    borderWidth: 1,
-    borderColor: colors.secondary,
+  momentumHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
-  lessonsCard: {
-    backgroundColor: colors.accentLight,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  cardLabel: {
-    ...typography.small,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  cardValue: {
-    ...typography.display,
-    color: colors.primary,
-    fontWeight: '800',
-    marginVertical: spacing.xs,
-  },
-  cardBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    borderRadius: borderRadius.small,
-    overflow: 'hidden',
-  },
-  cardBarFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.small,
-  },
-  cardSubtext: {
-    ...typography.tiny,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  actionsSection: {
-    paddingHorizontal: spacing.lg,
-    marginVertical: spacing.md,
-  },
-  sectionTitle: {
+  momentumTitle: {
     ...typography.h2,
-    fontWeight: '700',
-    color: colors.textPrimary,
+  },
+  momentumValue: {
+    ...typography.h1,
+  },
+  momentumDesc: {
+    ...typography.caption,
+    lineHeight: 16,
     marginBottom: spacing.md,
   },
-  actionsGrid: {
+  progressBarBg: {
+    height: 10,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 5,
+  },
+  quickActions: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    justifyContent: 'space-between',
+    marginBottom: spacing.lg,
   },
-  actionCard: {
-    width: '30%',
-    aspectRatio: 1,
+  miniCard: {
+    width: '48%',
     padding: spacing.md,
-    borderRadius: borderRadius.large,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-    ...shadows.small,
+    justifyContent: 'space-between',
   },
-  actionEmoji: {
+  emoji: {
     fontSize: 28,
     marginBottom: spacing.xs,
   },
-  actionTitle: {
-    ...typography.tiny,
-    fontWeight: '600',
-    textAlign: 'center',
+  cardTitle: {
+    ...typography.body,
+    fontWeight: 'bold',
   },
-  nextStepsSection: {
-    paddingHorizontal: spacing.lg,
+  cardSub: {
+    ...typography.caption,
+    marginVertical: spacing.xs,
+    lineHeight: 14,
+  },
+  actionBtn: {
+    paddingVertical: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  pauseCard: {
+    padding: spacing.md,
+    marginBottom: 50,
+  },
+  pauseTitle: {
+    ...typography.h2,
+    marginBottom: spacing.xs,
+  },
+  pauseDesc: {
+    ...typography.caption,
     marginBottom: spacing.md,
-  },
-  stepCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.medium,
-    marginBottom: spacing.sm,
-    ...shadows.small,
-  },
-  stepBullet: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-    marginRight: spacing.md,
-  },
-  stepText: {
-    ...typography.body,
-    color: colors.textSecondary,
-    flex: 1,
-  },
-  stepArrow: {
-    ...typography.body,
-    color: colors.textLight,
-  },
-  pauseButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-    padding: spacing.md,
-    backgroundColor: colors.warningLight,
-    borderRadius: borderRadius.large,
-    borderWidth: 1,
-    borderColor: colors.warning,
-    ...shadows.small,
-  },
-  pauseIcon: {
-    fontSize: 20,
-  },
-  pauseText: {
-    ...typography.body,
-    color: colors.warning,
-    fontWeight: '600',
-    flex: 1,
-    marginHorizontal: spacing.sm,
-  },
-  pauseArrow: {
-    ...typography.body,
-    color: colors.warning,
+    lineHeight: 16,
   },
 });
-
-export default DashboardScreen;

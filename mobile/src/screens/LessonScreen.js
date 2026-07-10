@@ -1,200 +1,253 @@
-// mobile/src/screens/LessonScreen.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
-import { lessonService } from '../services/lessonService';
-import { gradingService } from '../services/gradingService';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, TextInput, Alert, TouchableOpacity } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 import { useProgress } from '../context/ProgressContext';
-import { colors, typography, spacing } from '../styles/theme';
+import { spacing, typography, glassmorphism } from '../styles/theme';
+import { Button } from '../components/common/Button';
 
-const LessonScreen = ({ route }) => {
-  const { topic } = route.params;
-  const { progress, updateProgress } = useProgress();
-  
-  const [lesson, setLesson] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [practiceAnswer, setPracticeAnswer] = useState('');
-  const [gradeResult, setGradeResult] = useState(null);
-  const [showPractice, setShowPractice] = useState(false);
-
-  useEffect(() => {
-    loadLesson();
-  }, []);
-
-  const loadLesson = async () => {
-    setLoading(true);
-    try {
-      // Fetch AI-generated lesson
-      const lessonData = await lessonService.generateLesson(topic);
-      setLesson(lessonData);
-    } catch (error) {
-      console.error('Failed to load lesson:', error);
-      // Fallback to seed content
-      const seedLesson = await lessonService.getSeedLesson(topic);
-      setLesson(seedLesson);
-    }
-    setLoading(false);
-  };
-
-  const handleSubmitPractice = async () => {
-    setLoading(true);
-    try {
-      const result = await gradingService.gradeTask(lesson.task, practiceAnswer);
-      setGradeResult(result);
-      // Update progress
-      updateProgress({ 
-        lessonId: lesson.id, 
-        score: result.score 
-      });
-    } catch (error) {
-      console.error('Grading failed:', error);
-    }
-    setLoading(false);
-  };
-
-  if (loading) return <Loader />;
-
-  return (
-    <ScrollView style={styles.container}>
-      {/* Lesson Content */}
-      <View style={styles.lessonContainer}>
-        <Text style={styles.topicTitle}>{lesson.title}</Text>
-        {lesson.concepts.map((concept, index) => (
-          <View key={index} style={styles.conceptCard}>
-            <Text style={styles.conceptTitle}>{concept.title}</Text>
-            <Text style={styles.conceptBody}>{concept.body}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Practice Task */}
-      <View style={styles.practiceContainer}>
-        <TouchableOpacity 
-          style={styles.practiceToggle}
-          onPress={() => setShowPractice(!showPractice)}
-        >
-          <Text style={styles.practiceToggleText}>
-            {showPractice ? 'Hide Practice Task' : 'Show Practice Task 📝'}
-          </Text>
-        </TouchableOpacity>
-
-        {showPractice && (
-          <View style={styles.practiceContent}>
-            <Text style={styles.taskTitle}>Practice Task:</Text>
-            <Text style={styles.taskDescription}>{lesson.task.description}</Text>
-            
-            <TextInput
-              style={styles.answerInput}
-              multiline
-              placeholder="Type your answer here..."
-              value={practiceAnswer}
-              onChangeText={setPracticeAnswer}
-            />
-
-            <TouchableOpacity 
-              style={styles.submitButton}
-              onPress={handleSubmitPractice}
-            >
-              <Text style={styles.submitButtonText}>Submit for Feedback</Text>
-            </TouchableOpacity>
-
-            {gradeResult && (
-              <View style={styles.gradeContainer}>
-                <Text style={styles.gradeScore}>Score: {gradeResult.score}/10</Text>
-                <Text style={styles.gradeFeedback}>{gradeResult.feedback}</Text>
-                {gradeResult.missing && (
-                  <View style={styles.missingContainer}>
-                    <Text style={styles.missingTitle}>🔍 What to fix:</Text>
-                    {gradeResult.missing.map((item, i) => (
-                      <Text key={i} style={styles.missingItem}>• {item}</Text>
-                    ))}
-                  </View>
-                )}
-                <TouchableOpacity style={styles.flagButton}>
-                  <Text style={styles.flagButtonText}>🚩 Flag This Score</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        )}
-      </View>
-
-      {/* Next Lesson Button */}
-      <TouchableOpacity style={styles.nextButton}>
-        <Text style={styles.nextButtonText}>Next Lesson →</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
+const MOCK_LESSON = {
+  id: 'vlookup_basics',
+  topic: 'Excel',
+  title: 'Cleaning with VLOOKUP 🔍',
+  cards: [
+    {
+      id: 1,
+      concept: 'The "Why"',
+      text: 'VLOOKUP is your helper assistant. It takes a known item (like an Order ID) and goes searching down a massive list to bring you back matching info (like customer names).',
+    },
+    {
+      id: 2,
+      concept: 'The Formula Map',
+      text: '=VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])\n\n- lookup_value: The value you already know.\n- table_array: The range where your target data lives.\n- col_index_num: The column position containing your answer.',
+    },
+  ],
+  practice: {
+    instruction: 'Complete the formula below to pull matching data from the table starting in column A, returning values from Column 3:',
+    baseText: '=VLOOKUP("ID-402", A:F, [Enter Col Number], FALSE)',
+  },
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  lessonContainer: { padding: spacing.md },
-  topicTitle: { fontSize: typography.h1, fontWeight: 'bold', color: colors.primary, marginBottom: spacing.md },
-  conceptCard: { 
-    backgroundColor: colors.card, 
-    borderRadius: 8, 
-    padding: spacing.md, 
-    marginBottom: spacing.sm,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary 
-  },
-  conceptTitle: { fontSize: typography.h3, fontWeight: 'bold', color: colors.textPrimary },
-  conceptBody: { fontSize: typography.body, color: colors.textSecondary, marginTop: spacing.xs },
-  practiceContainer: { margin: spacing.md },
-  practiceToggle: { 
-    padding: spacing.md, 
-    backgroundColor: colors.secondary, 
-    borderRadius: 8,
-    alignItems: 'center' 
-  },
-  practiceToggleText: { color: colors.white, fontSize: typography.button },
-  practiceContent: { marginTop: spacing.md },
-  taskTitle: { fontSize: typography.h2, fontWeight: 'bold', color: colors.textPrimary },
-  taskDescription: { fontSize: typography.body, color: colors.textSecondary, marginVertical: spacing.sm },
-  answerInput: { 
-    borderWidth: 1, 
-    borderColor: colors.border, 
-    borderRadius: 8, 
-    padding: spacing.md,
-    minHeight: 120,
-    textAlignVertical: 'top',
-    backgroundColor: colors.white 
-  },
-  submitButton: { 
-    marginTop: spacing.md, 
-    padding: spacing.md, 
-    backgroundColor: colors.success, 
-    borderRadius: 8,
-    alignItems: 'center' 
-  },
-  submitButtonText: { color: colors.white, fontSize: typography.button, fontWeight: 'bold' },
-  gradeContainer: { 
-    marginTop: spacing.md, 
-    padding: spacing.md, 
-    backgroundColor: colors.card, 
-    borderRadius: 8 
-  },
-  gradeScore: { fontSize: typography.h2, fontWeight: 'bold', color: colors.primary },
-  gradeFeedback: { fontSize: typography.body, color: colors.textSecondary, marginVertical: spacing.sm },
-  missingContainer: { marginTop: spacing.sm, backgroundColor: colors.warningLight, padding: spacing.md, borderRadius: 8 },
-  missingTitle: { fontSize: typography.body, fontWeight: 'bold', color: colors.warning },
-  missingItem: { fontSize: typography.body, color: colors.textSecondary, marginLeft: spacing.md },
-  flagButton: { 
-    marginTop: spacing.sm, 
-    padding: spacing.sm, 
-    backgroundColor: colors.dangerLight, 
-    borderRadius: 8,
-    alignItems: 'center' 
-  },
-  flagButtonText: { color: colors.danger, fontSize: typography.body },
-  nextButton: { 
-    margin: spacing.lg, 
-    padding: spacing.md, 
-    backgroundColor: colors.primary, 
-    borderRadius: 8,
-    alignItems: 'center' 
-  },
-  nextButtonText: { color: colors.white, fontSize: typography.button, fontWeight: 'bold' },
-});
+export default function LessonScreen({ navigation }) {
+  const { colors, isDarkMode } = useTheme();
+  const { completeLesson } = useProgress();
+  const [currentCard, setCurrentCard] = useState(0);
+  const [learnerAnswer, setLearnerAnswer] = useState('');
+  const [isGraded, setIsGraded] = useState(false);
+  const [gradingFeedback, setGradingFeedback] = useState(null);
+  const [language, setLanguage] = useState('EN'); // Localization support
 
-export default LessonScreen;
+  const handleGradeTask = () => {
+    if (!learnerAnswer.trim()) {
+      Alert.alert('Almost there', 'Give it a try before grading!');
+      return;
+    }
+
+    // AI grading approximation for structural mock logic
+    const sanitized = learnerAnswer.replace(/\s+/g, '');
+    if (sanitized === '3') {
+      setGradingFeedback({
+        passed: true,
+        score: '10/10',
+        response: 'Spot on! You pointed directly to Column 3 to extract the record. Excellent job adjusting the layout structure.',
+      });
+      completeLesson(MOCK_LESSON.id);
+    } else {
+      setGradingFeedback({
+        passed: false,
+        score: '6/10',
+        response: 'Good attempt. Remember: we need to pull from the 3rd column. Check the parameter index again.',
+      });
+    }
+    setIsGraded(true);
+  };
+
+  const currentConcept = MOCK_LESSON.cards[currentCard];
+
+  return (
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <Text style={[styles.topicLabel, { color: colors.primary }]}>{MOCK_LESSON.topic.toUpperCase()}</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{MOCK_LESSON.title}</Text>
+        
+        {/* Simple translation pill */}
+        <TouchableOpacity 
+          style={[styles.translatePill, { backgroundColor: colors.accent }]}
+          onPress={() => setLanguage(l => l === 'EN' ? 'HI' : 'EN')}
+        >
+          <Text style={[styles.translateText, { color: colors.textInverse }]}>
+            {language === 'EN' ? 'Translate to Hindi' : 'Show English'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Lesson concept step cards */}
+      <View style={[styles.glassCard, glassmorphism(isDarkMode)]}>
+        <Text style={[styles.conceptTitle, { color: colors.textPrimary }]}>
+          Step {currentConcept.id}: {currentConcept.concept}
+        </Text>
+        <Text style={[styles.conceptText, { color: colors.textSecondary }]}>
+          {language === 'EN' 
+            ? currentConcept.text 
+            : 'VLOOKUP आपकी सहायक मार्गदर्शिका है। यह एक ज्ञात आइटम (जैसे ऑर्डर आईडी) को एक विशाल डेटा सूची में खोजकर संबंधित रिकॉर्ड (जैसे ग्राहक का नाम) ढूंढ निकालती है।'}
+        </Text>
+
+        <View style={styles.cardNav}>
+          <TouchableOpacity 
+            disabled={currentCard === 0} 
+            onPress={() => setCurrentCard(p => p - 1)}
+          >
+            <Text style={{ color: currentCard === 0 ? colors.textSecondary : colors.primary }}>Previous</Text>
+          </TouchableOpacity>
+          <Text style={{ color: colors.textSecondary }}>{currentCard + 1} of {MOCK_LESSON.cards.length}</Text>
+          <TouchableOpacity 
+            disabled={currentCard === MOCK_LESSON.cards.length - 1} 
+            onPress={() => setCurrentCard(p => p + 1)}
+          >
+            <Text style={{ color: currentCard === MOCK_LESSON.cards.length - 1 ? colors.textSecondary : colors.primary }}>Next</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Applied Task Practice Container */}
+      <View style={[styles.practiceCard, glassmorphism(isDarkMode)]}>
+        <Text style={[styles.practiceHeader, { color: colors.textPrimary }]}>Practice Task 🛠️</Text>
+        <Text style={[styles.instruction, { color: colors.textSecondary }]}>
+          {MOCK_LESSON.practice.instruction}
+        </Text>
+        
+        <Text style={[styles.codeBase, { color: colors.textPrimary }]}>
+          {MOCK_LESSON.practice.baseText}
+        </Text>
+
+        <TextInput
+          style={[styles.input, { borderColor: colors.primary, color: colors.textPrimary }]}
+          placeholder="Enter column number index (e.g. 3)"
+          placeholderTextColor={colors.textSecondary}
+          keyboardType="numeric"
+          value={learnerAnswer}
+          onChangeText={setLearnerAnswer}
+          editable={!isGraded}
+        />
+
+        {isGraded ? (
+          <View style={[
+            styles.feedbackContainer, 
+            { backgroundColor: gradingFeedback.passed ? 'rgba(152, 251, 152, 0.2)' : 'rgba(255, 178, 178, 0.2)' }
+          ]}>
+            <Text style={[styles.feedbackScore, { color: colors.textPrimary }]}>
+              Grade: {gradingFeedback.score}
+            </Text>
+            <Text style={[styles.feedbackBody, { color: colors.textSecondary }]}>
+              {gradingFeedback.response}
+            </Text>
+            <Button 
+              title={gradingFeedback.passed ? "Next Lesson" : "Try Again"} 
+              onPress={() => {
+                if (gradingFeedback.passed) {
+                  navigation.navigate('Dashboard');
+                } else {
+                  setIsGraded(false);
+                  setLearnerAnswer('');
+                }
+              }}
+              style={styles.actionBtn}
+            />
+          </View>
+        ) : (
+          <Button title="Submit to AI Grading" onPress={handleGradeTask} style={styles.actionBtn} />
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: spacing.md,
+  },
+  header: {
+    marginTop: 50,
+    marginBottom: spacing.md,
+  },
+  topicLabel: {
+    ...typography.caption,
+    fontWeight: 'bold',
+  },
+  title: {
+    ...typography.h1,
+    marginVertical: spacing.xs,
+  },
+  translatePill: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 15,
+    alignSelf: 'flex-start',
+    marginTop: spacing.xs,
+  },
+  translateText: {
+    ...typography.caption,
+    fontWeight: 'bold',
+  },
+  glassCard: {
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  conceptTitle: {
+    ...typography.h2,
+    marginBottom: spacing.xs,
+  },
+  conceptText: {
+    ...typography.body,
+    lineHeight: 24,
+    marginBottom: spacing.lg,
+  },
+  cardNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  practiceCard: {
+    padding: spacing.md,
+    marginBottom: 50,
+  },
+  practiceHeader: {
+    ...typography.h2,
+    marginBottom: spacing.xs,
+  },
+  instruction: {
+    ...typography.body,
+    marginBottom: spacing.md,
+  },
+  codeBase: {
+    fontFamily: 'monospace',
+    padding: spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderRadius: 8,
+    marginBottom: spacing.md,
+  },
+  input: {
+    borderWidth: 1.5,
+    borderRadius: 10,
+    padding: spacing.sm,
+    fontSize: 16,
+    marginBottom: spacing.md,
+  },
+  feedbackContainer: {
+    padding: spacing.md,
+    borderRadius: 15,
+    marginVertical: spacing.xs,
+  },
+  feedbackScore: {
+    ...typography.body,
+    fontWeight: 'bold',
+  },
+  feedbackBody: {
+    ...typography.caption,
+    lineHeight: 18,
+    marginVertical: spacing.xs,
+  },
+  actionBtn: {
+    marginTop: spacing.xs,
+  },
+});

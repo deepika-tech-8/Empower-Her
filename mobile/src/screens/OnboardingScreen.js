@@ -1,101 +1,94 @@
 // mobile/src/screens/OnboardingScreen.js
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 import { useProgress } from '../context/ProgressContext';
-import { colors, typography, spacing, borderRadius } from '../styles/theme';
+import { colors, typography, spacing } from '../styles/theme';
 
 const OnboardingScreen = ({ navigation }) => {
+  const { user, setUser } = useAuth();
   const { setSchedule } = useProgress();
+  
   const [step, setStep] = useState(1);
   const [responses, setResponses] = useState({
     goal: '',
     kidSleepTime: '',
-    lunchBreak: '',
-    commitments: '',
+    lunchBreakLength: '',
+    weeklyCommitments: '',
   });
 
   const handleNext = () => {
     if (step < 3) {
       setStep(step + 1);
     } else {
+      // Save schedule and navigate to dashboard
       setSchedule(responses);
       navigation.replace('Dashboard');
-    }
-  };
-
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <View style={styles.stepContainer}>
-            <Text style={styles.question}>What's your career goal? 🎯</Text>
-            {['Data Analyst', 'Business Analyst', 'Data Entry', 'Data Scientist'].map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[styles.option, responses.goal === option && styles.selected]}
-                onPress={() => setResponses({ ...responses, goal: option })}
-              >
-                <Text style={styles.optionText}>{option}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        );
-      case 2:
-        return (
-          <View style={styles.stepContainer}>
-            <Text style={styles.question}>When do kids usually sleep? 👶</Text>
-            {['Before 8 PM', '8-9 PM', 'After 9 PM', 'Not applicable'].map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[styles.option, responses.kidSleepTime === option && styles.selected]}
-                onPress={() => setResponses({ ...responses, kidSleepTime: option })}
-              >
-                <Text style={styles.optionText}>{option}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        );
-      case 3:
-        return (
-          <View style={styles.stepContainer}>
-            <Text style={styles.question}>How long is your lunch break? 🍱</Text>
-            {['15-20 min', '30 min', '45-60 min', 'Flexible'].map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[styles.option, responses.lunchBreak === option && styles.selected]}
-                onPress={() => setResponses({ ...responses, lunchBreak: option })}
-              >
-                <Text style={styles.optionText}>{option}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        );
-      default:
-        return null;
     }
   };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>ElevateHer Learn</Text>
-        <Text style={styles.subtitle}>Learning that survives real life</Text>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${(step / 3) * 100}%` }]} />
-        </View>
-        <Text style={styles.stepText}>Step {step} of 3</Text>
+        <Text style={styles.title}>Welcome to ElevateHer Learn</Text>
+        <Text style={styles.subtitle}>Let's find your learning rhythm</Text>
       </View>
 
-      {renderStep()}
+      {step === 1 && (
+        <View style={styles.stepContainer}>
+          <Text style={styles.question}>What's your career goal?</Text>
+          <TouchableOpacity 
+            style={[styles.option, responses.goal === 'Data Analyst' && styles.selected]}
+            onPress={() => setResponses({...responses, goal: 'Data Analyst'})}
+          >
+            <Text style={styles.optionText}>Data Analyst</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.option, responses.goal === 'Business Analyst' && styles.selected]}
+            onPress={() => setResponses({...responses, goal: 'Business Analyst'})}
+          >
+            <Text style={styles.optionText}>Business Analyst</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.option, responses.goal === 'Data Entry' && styles.selected]}
+            onPress={() => setResponses({...responses, goal: 'Data Entry'})}
+          >
+            <Text style={styles.optionText}>Data Entry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-      <TouchableOpacity
-        style={[
-          styles.nextButton,
-          (!responses.goal || (step === 2 && !responses.kidSleepTime) || (step === 3 && !responses.lunchBreak)) && styles.disabled,
-        ]}
-        onPress={handleNext}
-        disabled={!responses.goal || (step === 2 && !responses.kidSleepTime) || (step === 3 && !responses.lunchBreak)}
-      >
+      {step === 2 && (
+        <View style={styles.stepContainer}>
+          <Text style={styles.question}>When do kids usually sleep?</Text>
+          <TouchableOpacity style={styles.timeOption}>
+            <Text>Before 8 PM</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.timeOption}>
+            <Text>8-9 PM</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.timeOption}>
+            <Text>After 9 PM</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {step === 3 && (
+        <View style={styles.stepContainer}>
+          <Text style={styles.question}>How long is your lunch break?</Text>
+          <TouchableOpacity style={styles.timeOption}>
+            <Text>15-20 min</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.timeOption}>
+            <Text>30 min</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.timeOption}>
+            <Text>45-60 min</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
         <Text style={styles.nextButtonText}>
           {step === 3 ? 'Start Learning 🚀' : 'Next →'}
         </Text>
@@ -106,19 +99,33 @@ const OnboardingScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: { padding: spacing.lg, alignItems: 'center', backgroundColor: colors.card },
-  title: { fontSize: typography.h1, fontWeight: 'bold', color: colors.primary },
-  subtitle: { fontSize: typography.body, color: colors.textSecondary, marginTop: spacing.xs },
-  progressBar: { width: '100%', height: 6, backgroundColor: colors.border, borderRadius: borderRadius.small, marginTop: spacing.md },
-  progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: borderRadius.small },
-  stepText: { fontSize: typography.small, color: colors.textSecondary, marginTop: spacing.xs },
+  header: { padding: spacing.lg, alignItems: 'center' },
+  title: { fontSize: typography.h1, color: colors.primary, fontWeight: 'bold' },
+  subtitle: { fontSize: typography.body, color: colors.textSecondary },
   stepContainer: { padding: spacing.lg },
-  question: { fontSize: typography.h2, fontWeight: 'bold', marginBottom: spacing.md },
-  option: { padding: spacing.md, borderRadius: borderRadius.medium, marginVertical: spacing.xs, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+  question: { fontSize: typography.h2, marginBottom: spacing.md },
+  option: { 
+    padding: spacing.md, 
+    borderRadius: 8, 
+    marginVertical: spacing.xs, 
+    backgroundColor: colors.card 
+  },
   selected: { backgroundColor: colors.primaryLight, borderColor: colors.primary, borderWidth: 2 },
-  optionText: { fontSize: typography.body, color: colors.textPrimary },
-  nextButton: { margin: spacing.lg, padding: spacing.md, backgroundColor: colors.primary, borderRadius: borderRadius.medium, alignItems: 'center' },
-  disabled: { backgroundColor: colors.textLight },
+  optionText: { fontSize: typography.body },
+  timeOption: { 
+    padding: spacing.md, 
+    borderRadius: 8, 
+    marginVertical: spacing.xs, 
+    backgroundColor: colors.card,
+    alignItems: 'center' 
+  },
+  nextButton: { 
+    margin: spacing.lg, 
+    padding: spacing.md, 
+    backgroundColor: colors.primary, 
+    borderRadius: 8,
+    alignItems: 'center' 
+  },
   nextButtonText: { color: colors.white, fontSize: typography.button, fontWeight: 'bold' },
 });
 
